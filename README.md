@@ -1,1 +1,1 @@
-# cs229-final-project
+# CS229 Final Project - Predicting Movie Genre From Posters
