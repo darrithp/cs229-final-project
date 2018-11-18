@@ -10,7 +10,7 @@ def Conv2dSame(in_channels, out_channels, kernel_size, stride=1):
 
 class ConvolutionalNeuralNet(nn.Module):
     def __init__(self):
-        super(Discriminator, self).__init__()
+        super(ConvolutionalNeuralNet, self).__init__()
         # Layers
         self.conv2d1 = Conv2dSame(3, 32, 5, stride=2) # (3, 128, 256) -> (32, 64, 128)
         self.conv2d2 = Conv2dSame(32, 32, 5, stride=2) # -> (32, 32, 64)
