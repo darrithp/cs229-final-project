@@ -42,5 +42,6 @@ def load_imgs(imgs, genres):
 		f.write(str(genres))
 	return genres
 
+# Reads the genres dict in from LABELS_PATH
 def get_genres():
 	return ast.literal_eval(open(LABELS_PATH, 'r').read())
