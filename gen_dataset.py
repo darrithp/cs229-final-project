@@ -6,7 +6,7 @@ import sys
 import random
 from PIL import Image
 
-SPLIT = [0.6, 0.2, 0.2]
+SPLIT = [0.8, 0.1, 0.1]
 
 # Squeezes image to [0, 1], and also makes sure it's in [C, H, W] format
 def preprocess_img(img):

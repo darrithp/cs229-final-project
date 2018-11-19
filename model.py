@@ -28,7 +28,7 @@ class ConvolutionalNeuralNet(nn.Module):
         conv_4 = F.elu(self.conv2d4(conv_3))
         conv_5 = F.elu(self.conv2d5(conv_4))
         conv_5_reshape = conv_5.view(-1, 2048)
-        linear_1 = F.elu(self.linear1(conv_a5_reshape))
-        linear_2 = F.elu(self.linear2(linear1))
-        linear_3 = F.elu(self.linear3(linear2))
+        linear_1 = F.elu(self.linear1(conv_5_reshape))
+        linear_2 = F.elu(self.linear2(linear_1))
+        linear_3 = F.elu(self.linear3(linear_2))
         return linear_3
