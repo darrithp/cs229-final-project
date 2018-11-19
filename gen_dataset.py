@@ -4,6 +4,7 @@ import numpy as np
 import subprocess
 import sys
 import random
+from PIL import Image
 
 SPLIT = [0.6, 0.2, 0.2]
 
@@ -13,39 +14,46 @@ def preprocess_img(img):
 
 def resize_crop_img(img_filename):
     img = Image.open(img_filename).convert('RGB')
-    return img.resize(128, 256)
+    return img.resize((128, 256))
 
 
 def generate_set(ids, movie_dict, data_path, dataset_type):
-	dataset = {}
-	for movie_id in ids:
-		sample = {}
-		sample['class'] = movie_dict[movie_id]
-		img_name = movie_id + ".png"
-    	image_path = os.path.join("imgs", img_name)
-		img = resize_crop_img(image_path) 
-		sample['preprocess_img'] = preprocess_img(img)
-		dataset[movie_id] = sample
-
-	filename = dataset_type + 'data.pkl'
-	ut.repickle({'data': dataset}, os.path.join(data_path, filename))
+    dataset = {}
+    testlist = []
+    for movie_id in ids:
+        sample = {}
+        sample['class'] = movie_dict[movie_id]
+        img_name = movie_id + ".png"
+        image_path = os.path.join("data/imgs", img_name)
+        try:
+            img = resize_crop_img(image_path)
+        except:
+            continue
+        sample['preprocess_img'] = preprocess_img(img)
+        testlist.append(sample['class'])
+        dataset[movie_id] = sample
+    #print(len(dataset.keys()))
+    #print(testlist)
+    filename = dataset_type + 'data.pkl'
+    ut.repickle({'data': dataset}, os.path.join(data_path, filename))
 
 def gen_dataset(N, data_path):
     data_path = os.path.abspath(data_path)
-    util.create_dir(data_path)
+    ut.create_dir(data_path)
 
-    movie_dict = ut.unpickle(os.path.join("data","movies_single_index"))
+    movie_dict = ut.unpickle(os.path.join("data","movies_single_index.pkl"))
 
     full_ids = list(movie_dict.keys())
     movie_ids = random.sample(full_ids, N)
+    #print(movie_ids)
     ids_l = len(movie_ids)
-    train_ids = movie_ids[:np.floor(ids_l*SPLIT[0])]
-    val_ids = movie_ids[np.floor(ids_l*SPLIT[0]):np.floor(ids_l*(SPLIT[0]+SPLIT[1]))]
-    test_ids = movie_ids[np.floor(ids_l*(SPLIT[0]+SPLIT[1]):]
+    train_ids = movie_ids[:int(ids_l*SPLIT[0])]
+    val_ids = movie_ids[int(ids_l*SPLIT[0]):int(ids_l*(SPLIT[0]+SPLIT[1]))]
+    test_ids = movie_ids[int(ids_l*(SPLIT[0]+SPLIT[1])):-1]
 
     generate_set(train_ids, movie_dict, data_path, "train")
-    generate_set(train_ids, movie_dict, data_path, "val")
-    generate_set(train_ids, movie_dict, data_path, "test")
+    generate_set(val_ids, movie_dict, data_path, "val")
+    generate_set(test_ids, movie_dict, data_path, "test")
 
 
 def main():
