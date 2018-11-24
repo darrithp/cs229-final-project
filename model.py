@@ -8,9 +8,9 @@ def padding(f):
 def Conv2dSame(in_channels, out_channels, kernel_size, stride=1):
     return nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=padding(kernel_size))
 
-class ConvolutionalNeuralNet(nn.Module):
+class MultiClassifier(nn.Module):
     def __init__(self):
-        super(ConvolutionalNeuralNet, self).__init__()
+        super(MultiClassifier, self).__init__()
         # Layers
         self.conv2d1 = Conv2dSame(3, 32, 5, stride=2) # (3, 128, 256) -> (32, 64, 128)
         self.conv2d2 = Conv2dSame(32, 32, 5, stride=2) # -> (32, 32, 64)
@@ -31,4 +31,5 @@ class ConvolutionalNeuralNet(nn.Module):
         linear_1 = F.elu(self.linear1(conv_5_reshape))
         linear_2 = F.elu(self.linear2(linear_1))
         linear_3 = F.elu(self.linear3(linear_2))
-        return linear_3
+        final_linear = F.softmax(linear_3)
+        return final_linear

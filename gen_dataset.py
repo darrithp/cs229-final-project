@@ -32,20 +32,22 @@ def generate_set(ids, movie_dict, data_path, dataset_type):
         sample['preprocess_img'] = preprocess_img(img)
         testlist.append(sample['class'])
         dataset[movie_id] = sample
-    #print(len(dataset.keys()))
-    #print(testlist)
+
     filename = dataset_type + 'data.pkl'
     ut.repickle({'data': dataset}, os.path.join(data_path, filename))
 
-def gen_dataset(N, data_path):
+def gen_dataset(N, data_path, isMC = True):
     data_path = os.path.abspath(data_path)
     ut.create_dir(data_path)
 
-    movie_dict = ut.unpickle(os.path.join("data","movies_single_index.pkl"))
+    if (isMC):
+        movie_dict = ut.unpickle(os.path.join("data","movies_single_index.pkl"))
+    else:
+        movie_dict = ut.unpickle(os.path.join("data","movies_multi_index.pkl")) #Need to make this new index thing
 
     full_ids = list(movie_dict.keys())
     movie_ids = random.sample(full_ids, N)
-    #print(movie_ids)
+
     ids_l = len(movie_ids)
     train_ids = movie_ids[:int(ids_l*SPLIT[0])]
     val_ids = movie_ids[int(ids_l*SPLIT[0]):int(ids_l*(SPLIT[0]+SPLIT[1]))]
@@ -57,11 +59,15 @@ def gen_dataset(N, data_path):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print('Usage: python3 gen_dataset.py [N] [output_path]')
+    if len(sys.argv) < 4:
+        print('Usage: python3 gen_dataset.py [MC|ML] [N] [output_path]')
         exit()
 
-    gen_dataset(int(sys.argv[1]), sys.argv[2])
+    isMultiClassifier = True
+    if sys.argv[1] == "ML":
+        isMultiClassifier = False
+
+    gen_dataset(int(sys.argv[2]), sys.argv[3], isMultiClassifier)
 
 if __name__ == '__main__':
     main()

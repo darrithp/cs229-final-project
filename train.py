@@ -7,7 +7,7 @@ import util as ut
 from torch.autograd import Variable
 import numpy as np
 from dataset import MovieDataset
-from model import ConvolutionalNeuralNet
+from model import MultiClassifier
 
 CRITERION = nn.CrossEntropyLoss()
 N_EPOCHS = 100
@@ -15,20 +15,26 @@ BATCH_SIZE = 25
 ADAM_ALPHA = 0.001
 ADAM_BETA = (0.9, 0.999)
 PRINT_INTERVAL = 5
+DATASET_RAW_PATH = os.path.join("data","temp")
+TRAIN_DATA = "traindata.pkl"
+VAL_DATA = "valdata.pkl"
+TEST_DATA = "testdata.pkl"
+CLASS_INDECES_RAW_PATH = os.path.join("data","class_indeces.pkl")
 
 cuda = torch.cuda.is_available()
 device = 'cuda' if cuda else 'cpu'
 FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
 
-def main():
+def train_multiclassifier(dataset_path):
 
-    train_data = MovieDataset("data/temp/dataset10000/traindata.pkl")
+    train_path = os.path.join(DATASET_RAW_PATH, dataset_path, TRAIN_DATA)
+    train_data = MovieDataset(train_path)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
 
     # Instantiate the models
-    CNN = ConvolutionalNeuralNet().to(device)
-    Optimizer = torch.optim.Adam(CNN.parameters(), lr=ADAM_ALPHA, betas=ADAM_BETA)
+    MC = MultiClassifier().to(device)
+    Optimizer = torch.optim.Adam(MC.parameters(), lr=ADAM_ALPHA, betas=ADAM_BETA)
     print('Training.')
     for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times
         for batch_index, batch_data in enumerate(train_loader):
@@ -42,7 +48,7 @@ def main():
             Optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = CNN(imgs)
+            outputs = MC(imgs)
             loss = CRITERION(outputs, labels)
             loss.backward()
             Optimizer.step()
@@ -55,7 +61,8 @@ def main():
 
 
     #Validation Set
-    val_data = MovieDataset("data/temp/dataset10000/valdata.pkl")
+    val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
+    val_data = MovieDataset(val_path)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
 
     correct_predicted = 0
@@ -65,7 +72,7 @@ def main():
             imgs, labels = data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
             labels = Variable(labels.type(LongTensor)).to(device)
-            outputs = CNN(imgs)
+            outputs = MC(imgs)
             _, predicted = torch.max(outputs.data, 1)
             total_predicted += labels.size(0)
             correct_predicted += (predicted == labels).sum().item()
@@ -73,7 +80,7 @@ def main():
     print('Accuracy of the CNN on Validation Set: %d %%' % (
         100 * correct_predicted / total_predicted))
 
-    classes = ut.unpickle("data/class_indeces.pkl")
+    classes = ut.unpickle(CLASS_INDECES_RAW_PATH)
     class_correct = list(0. for i in range(len(classes)))
     class_total = list(0. for i in range(len(classes)))
     with torch.no_grad():
@@ -94,7 +101,23 @@ def main():
             print('Accuracy of %5s : N/A' % (classes[i]))
         else:
             print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
-        
+
+def train_multilabelclassifier(dataset_path):
+    print('TODO')
+
+
+def main():
+    if len(sys.argv) < 3:
+        print('Usage: python3 train.py [MC|ML] [dataset_name]')
+        exit()
+    train_type = sys.argv[1] 
+    if train_type == "MC":
+        train_multiclassifier(sys.argv[2])
+    elif train_type == "ML":
+        train_multilabelclassifier(sys.argv[2])
+    else:
+        print('Usage: python3 train.py [MC|ML] [dataset_name]')
+        exit()
     
 if __name__ == '__main__':
     main()

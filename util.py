@@ -4,6 +4,7 @@ import urllib
 import ast
 import os
 import pickle
+import copy
 
 DATA_PATH = "./data/movie_data.csv"
 IMG_PATH = "./data/imgs/"
@@ -47,8 +48,18 @@ def generate_pkl_files():
 
         repickle(class_list, os.path.join("data", "class_indeces.pkl"))
         repickle(genres, os.path.join("data", "genre_multi_labels.pkl"))
+
+
+        multi_genres = copy.deepcopy(genres)
+
         for key in genres:
                 genres[key] = class_list.index(genres[key][0])
+                new_list = []
+                for genre in multi_genres[key]:
+                    new_list.append(class_list.index(genre))
+                multi_genres[key] = new_list
+
+        repickle(genres, os.path.join("data", "movies_multi_index.pkl"))
         repickle(genres, os.path.join("data", "movies_single_index.pkl"))
 
 # Downloads the images for the imdb IDs with valid non-null urls.
