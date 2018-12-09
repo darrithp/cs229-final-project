@@ -42,6 +42,8 @@ def train_multiclassifier(dataset_path):
             imgs, labels = batch_data
 
             imgs = Variable(imgs.type(FloatTensor)).to(device)
+            print(imgs.size())
+            print(labels.size())
             labels = Variable(labels.type(LongTensor)).to(device)
 
             # zero the parameter gradients
