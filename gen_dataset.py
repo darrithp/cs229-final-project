@@ -20,9 +20,15 @@ def resize_crop_img(img_filename):
 def generate_set(ids, movie_dict, data_path, dataset_type):
     dataset = {}
     testlist = []
+    counter = 0
     for movie_id in ids:
+        counter += 1
+        if counter % 100  == 0:
+            print("Finished adding %d samples." % (counter))
         sample = {}
-        sample['class'] = movie_dict[movie_id]
+        one_hot = [0] * 28
+        one_hot[movie_dict[movie_id]] = 1
+        sample['class'] = one_hot
         img_name = movie_id + ".png"
         image_path = os.path.join("data/imgs", img_name)
         try:
@@ -53,8 +59,11 @@ def gen_dataset(N, data_path, isMC = True):
     val_ids = movie_ids[int(ids_l*SPLIT[0]):int(ids_l*(SPLIT[0]+SPLIT[1]))]
     test_ids = movie_ids[int(ids_l*(SPLIT[0]+SPLIT[1])):-1]
 
+    print("Generating Training Set...")
     generate_set(train_ids, movie_dict, data_path, "train")
+    print("Generating Validation Set...")
     generate_set(val_ids, movie_dict, data_path, "val")
+    print("Generating Test Set...")
     generate_set(test_ids, movie_dict, data_path, "test")
 
 

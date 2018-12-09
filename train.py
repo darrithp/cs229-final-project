@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
 import util as ut
+import os
+import sys
 from torch.autograd import Variable
 import numpy as np
 from dataset import MovieDataset
@@ -40,18 +42,17 @@ def train_multiclassifier(dataset_path):
         for batch_index, batch_data in enumerate(train_loader):
             # get the inputs
             imgs, labels = batch_data
-
             imgs = Variable(imgs.type(FloatTensor)).to(device)
-            print(imgs.size())
-            print(labels.size())
-            labels = Variable(labels.type(LongTensor)).to(device)
-
+            labels = torch.stack(labels)
+            labels = torch.transpose(labels, 0, 1)
+            labels = Variable(labels).to(device)
+            #labels = Variable(labels.to(device))
             # zero the parameter gradients
             Optimizer.zero_grad()
 
             # forward + backward + optimize
             outputs = MC(imgs)
-            loss = CRITERION(outputs, labels)
+            loss = CRITERION(outputs, torch.max(labels, 1)[1])
             loss.backward()
             Optimizer.step()
 
@@ -73,11 +74,16 @@ def train_multiclassifier(dataset_path):
         for data in val_loader:
             imgs, labels = data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
-            labels = Variable(labels.type(LongTensor)).to(device)
+            labels = torch.stack(labels)
+            labels = torch.transpose(labels, 0, 1)
+            labels = Variable(labels).to(device)
             outputs = MC(imgs)
             _, predicted = torch.max(outputs.data, 1)
-            total_predicted += labels.size(0)
-            correct_predicted += (predicted == labels).sum().item()
+            #total_predicted += labels.size(0)
+            #correct_predicted += (labels[predicted] == 1).sum().item()
+            for batch_i in range (predicted.size(0)):
+                total_predicted += 1
+                correct_predicted += (labels[batch_i][predicted[batch_i]].item() == 1)
 
     print('Accuracy of the CNN on Validation Set: %d %%' % (
         100 * correct_predicted / total_predicted))
@@ -89,14 +95,22 @@ def train_multiclassifier(dataset_path):
         for data in val_loader:
             imgs, labels = data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
-            labels = Variable(labels.type(LongTensor)).to(device)
-            outputs = CNN(imgs)
+            labels = torch.stack(labels)
+            labels = torch.transpose(labels, 0, 1)
+            labels = Variable(labels).to(device)
+            outputs = MC(imgs)
             _, predicted = torch.max(outputs, 1)
-            c = (predicted == labels).squeeze()
+            '''
+            c = (labels[predicted] == 1).squeeze()
             for i in range(len(labels)):
                 label = labels[i]
                 class_correct[label] += c[i].item()
                 class_total[label] += 1
+            '''
+            for batch_i in range (predicted.size(0)):
+                label = np.argmax(labels[batch_i])
+                class_total[label] += 1
+                class_correct[label] += (labels[batch_i][predicted[batch_i]].item() == 1)
                 
     for i in range(len(classes)):
         if class_total[i] == 0:

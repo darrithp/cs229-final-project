@@ -91,6 +91,16 @@ def load_imgs(imgs, genres):
 def get_genres():
         return ast.literal_eval(open(LABELS_PATH, 'r').read())
 
+
+def get_distribution():
+    movie_dict = unpickle(os.path.join("data", "movies_single_index.pkl"))
+    count_list = [0] * 28
+    for movie_id in movie_dict:
+        count_list[movie_dict[movie_id]] += 1
+
+    print(count_list)
+    
+    
 def main():
         (imgs, genres) = load_data()
         magic_genres = load_imgs(imgs, genres)
