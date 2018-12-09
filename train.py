@@ -119,7 +119,82 @@ def train_multiclassifier(dataset_path):
             print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
 
 def train_multilabelclassifier(dataset_path):
-    print('TODO')
+    train_path = os.path.join(DATASET_RAW_PATH, dataset_path, TRAIN_DATA)
+    train_data = MovieDataset(train_path)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
+
+    # Instantiate the models
+    ML = MultiLabelClassifier().to(device)
+    Optimizer = torch.optim.Adam(ML.parameters(), lr=ADAM_ALPHA, betas=ADAM_BETA)
+    print('Training.')
+    for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times
+        for batch_index, batch_data in enumerate(train_loader):
+            # get the inputs
+            imgs, labels = batch_data
+            imgs = Variable(imgs.type(FloatTensor)).to(device)
+            labels = torch.stack(labels)
+            labels = torch.transpose(labels, 0, 1)
+            labels = Variable(labels).to(device)
+            #labels = Variable(labels.to(device))
+            # zero the parameter gradients
+            Optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = ML(imgs)
+            loss = CRITERION(outputs, labels) #CHANGE THIS
+            loss.backward()
+            Optimizer.step()
+
+            # Print Loss
+            if epoch_index % PRINT_INTERVAL == 0 and not batch_index:    # print every 2000 mini-batches
+                print('Epoch: %d \tLoss: %.3f' % (epoch_index, loss))
+
+    print('Finished Training. Testing on Validation Set.')
+
+
+    #Validation Set
+    val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
+    val_data = MovieDataset(val_path)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
+
+    true_positives = 0
+    true_negatives = 0
+    false_positives = 0
+    false_negatives = 0
+    with torch.no_grad():
+        for data in val_loader:
+            imgs, labels = data
+            imgs = Variable(imgs.type(FloatTensor)).to(device)
+            labels = torch.stack(labels)
+            labels = torch.transpose(labels, 0, 1)
+            labels = Variable(labels).to(device)
+            outputs = ML(imgs)
+            predicted = outputs.data
+            true = torch.ones_like(predicted, device=device)
+            false = torch.zeros_like(predicted, device=device)
+            predicted = torch.where(predicted >= 0.5, true, false)
+            #total_predicted += labels.size(0)
+            #correct_predicted += (labels[predicted] == 1).sum().item()
+            '''
+            for batch_i in range (predicted.size(0)):
+                total_predicted += 1
+                correct_predicted += (labels[batch_i][predicted[batch_i]].item() == 1)
+            '''
+            true_negative_batch = ((predicted-1)*(labels-1)).sum()
+            true_positive_batch = (predicted*labels).sum()
+            false_positive_batch = predicted.sum() - true_positive_batch
+            false_negative_batch = labels.sum() - true_positive_batch
+            true_positives += true_positive_batch
+            false_positives += false_positive_batch
+            false_negatives += false_negative_batch
+            true_negatives += true_negative_batch
+
+    print('Accuracy of the CNN on Validation Set: %d %%' % (
+        100 * (true_negatives+true_positives) / (true_negatives+true_positives+false_negatives+false_positives)))
+    print('Precision: %d %%' % (
+        100 * true_positives / (true_positives+false_positives)))
+    print('Recall: %d %%' % (
+        100 * true_positives / (true_positives+false_negatives)))
 
 
 def main():
