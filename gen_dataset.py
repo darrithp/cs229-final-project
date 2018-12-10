@@ -17,17 +17,23 @@ def resize_crop_img(img_filename):
     return img.resize((128, 256))
 
 
-def generate_set(ids, movie_dict, data_path, dataset_type):
+def generate_set(ids, movie_dict, data_path, dataset_type, isMC):
     dataset = {}
     testlist = []
     counter = 0
     for movie_id in ids:
         counter += 1
-        if counter % 100  == 0:
+        if counter % 50  == 0:
             print("Finished adding %d samples." % (counter))
         sample = {}
         one_hot = [0] * 28
-        one_hot[movie_dict[movie_id]] = 1
+        if isMC:
+            one_hot[movie_dict[movie_id]] = 1
+        else:
+            genre_list = movie_dict[movie_id]
+            for genre_index in genre_list:
+                one_hot[genre_index] = 1
+                
         sample['class'] = one_hot
         img_name = movie_id + ".png"
         image_path = os.path.join("data/imgs", img_name)
@@ -60,23 +66,24 @@ def gen_dataset(N, data_path, isMC = True):
     test_ids = movie_ids[int(ids_l*(SPLIT[0]+SPLIT[1])):-1]
 
     print("Generating Training Set...")
-    generate_set(train_ids, movie_dict, data_path, "train")
+    generate_set(train_ids, movie_dict, data_path, "train", isMC)
     print("Generating Validation Set...")
-    generate_set(val_ids, movie_dict, data_path, "val")
+    generate_set(val_ids, movie_dict, data_path, "val", isMC)
     print("Generating Test Set...")
-    generate_set(test_ids, movie_dict, data_path, "test")
+    generate_set(test_ids, movie_dict, data_path, "test", isMC)
 
 
 def main():
-    if len(sys.argv) < 4:
-        print('Usage: python3 gen_dataset.py [MC|ML] [N] [output_path]')
+    if len(sys.argv) < 3:
+        print('Usage: python3 gen_dataset.py [MC|ML] [N]')
         exit()
 
     isMultiClassifier = True
     if sys.argv[1] == "ML":
         isMultiClassifier = False
-
-    gen_dataset(int(sys.argv[2]), sys.argv[3], isMultiClassifier)
+    num_samples = int(sys.argv[2])
+    data_path = os.path.join("data", "temp", (sys.argv[1] + str(num_samples) + "dataset"))
+    gen_dataset(num_samples, data_path, isMultiClassifier)
 
 if __name__ == '__main__':
     main()

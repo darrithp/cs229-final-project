@@ -59,7 +59,7 @@ def generate_pkl_files():
                     new_list.append(class_list.index(genre))
                 multi_genres[key] = new_list
 
-        repickle(genres, os.path.join("data", "movies_multi_index.pkl"))
+        repickle(multi_genres, os.path.join("data", "movies_multi_index.pkl"))
         repickle(genres, os.path.join("data", "movies_single_index.pkl"))
 
 # Downloads the images for the imdb IDs with valid non-null urls.
@@ -97,8 +97,12 @@ def get_distribution():
     count_list = [0] * 28
     for movie_id in movie_dict:
         count_list[movie_dict[movie_id]] += 1
+    classes = unpickle(os.path.join("data", "class_indeces.pkl"))
+    class_dict = {}
+    for _class in classes:
+        class_dict[_class] = count_list[classes.index(_class)]
 
-    print(count_list)
+    return count_list
     
     
 def main():
