@@ -16,7 +16,7 @@ from model import MultiClassifier, MultiLabelClassifier
 #BCE_CRITERION = nn.BCEWithLogitsLoss()
 N_EPOCHS = 50
 BATCH_SIZE = 25
-ADAM_ALPHA = 0.0000001
+ADAM_ALPHA = 0.00005
 ADAM_BETA = (0.9, 0.999)
 PRINT_INTERVAL = 5
 DATASET_RAW_PATH = os.path.join("data","temp")
@@ -78,7 +78,7 @@ def train_multiclassifier(dataset_path, weights):
             loss = CE_CRITERION(outputs, torch.max(labels, 1)[1])
             loss.backward()
             Optimizer.step()
-            if (batch_index % 200) == 0:
+            if (batch_index % 100) == 0:
                 val_outputs = MC(val_imgs)
                 val_loss = CE_CRITERION(val_outputs, torch.max(val_labels, 1)[1])
                 training_loss_data.append((loss.item(), val_loss.item()))
