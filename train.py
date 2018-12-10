@@ -13,9 +13,9 @@ from model import MultiClassifier, MultiLabelClassifier
 
 #CE_CRITERION = nn.CrossEntropyLoss()
 #BCE_CRITERION = nn.BCEWithLogitsLoss()
-N_EPOCHS = 50
+N_EPOCHS = 30
 BATCH_SIZE = 25
-ADAM_ALPHA = 0.0001
+ADAM_ALPHA = 0.0000001
 ADAM_BETA = (0.9, 0.999)
 PRINT_INTERVAL = 5
 DATASET_RAW_PATH = os.path.join("data","temp")
@@ -37,6 +37,9 @@ def train_multiclassifier(dataset_path, weights):
     train_data = MovieDataset(train_path)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
 
+    val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
+    val_data = MovieDataset(val_path)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
     # Instantiate the models
     MC = MultiClassifier().to(device)
     Optimizer = torch.optim.Adam(MC.parameters(), lr=ADAM_ALPHA, betas=ADAM_BETA, weight_decay=REGULARIZATION)
@@ -61,15 +64,24 @@ def train_multiclassifier(dataset_path, weights):
 
             # Print Loss
             if epoch_index % PRINT_INTERVAL == 0 and not batch_index:    # print every 2000 mini-batches
-                print('Epoch: %d \tLoss: %.3f' % (epoch_index, loss))
-
+                print('Epoch: %d \tTraining Loss: %.3f' % (epoch_index, loss))
+                for val_batch_i, val_batch_data in enumerate(val_loader):
+                    val_imgs, val_labels = val_batch_data
+                    val_imgs = Variable(val_imgs.type(FloatTensor)).to(device)
+                    val_labels = torch.stack(val_labels)
+                    val_labels = torch.transpose(val_labels, 0, 1)
+                    val_labels = Variable(val_labels).to(device)
+                    val_outputs = MC(val_imgs)
+                    val_loss = CE_CRITERION(val_outputs, torch.max(val_labels, 1)[1])
+                    print('Epoch: %d \tValidation Loss: %.3f' % (epoch_index, val_loss))
+                    break
     print('Finished Training. Testing on Validation Set.')
 
 
     #Validation Set
-    val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
-    val_data = MovieDataset(val_path)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
+    #val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
+    #val_data = MovieDataset(val_path)
+    #val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
 
     correct_predicted = 0
     total_predicted = 0
