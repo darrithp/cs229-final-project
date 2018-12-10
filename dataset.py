@@ -14,7 +14,7 @@ class MovieDataset(data.Dataset):
         sample = self.data[self.ids[index]]
         img = sample['preprocess_img']
         label = sample['class']
-        return img, label
+        return img, label, self.ids[index]
     
     def __len__(self):
         return len(self.data.keys())

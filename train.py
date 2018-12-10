@@ -8,12 +8,13 @@ import os
 import sys
 from torch.autograd import Variable
 import numpy as np
+import csv
 from dataset import MovieDataset
 from model import MultiClassifier, MultiLabelClassifier
 
 #CE_CRITERION = nn.CrossEntropyLoss()
 #BCE_CRITERION = nn.BCEWithLogitsLoss()
-N_EPOCHS = 30
+N_EPOCHS = 50
 BATCH_SIZE = 25
 ADAM_ALPHA = 0.0000001
 ADAM_BETA = (0.9, 0.999)
@@ -23,12 +24,18 @@ TRAIN_DATA = "traindata.pkl"
 VAL_DATA = "valdata.pkl"
 TEST_DATA = "testdata.pkl"
 CLASS_INDECES_RAW_PATH = os.path.join("data","class_indeces.pkl")
-REGULARIZATION = 0.01
+REGULARIZATION = 0.0001
 
 cuda = torch.cuda.is_available()
 device = 'cuda' if cuda else 'cpu'
 FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
+
+
+def save_training_loss(data_path, data):
+    with open(data_path, 'w') as out:
+        csv_out = csv.writer(out)
+        csv_out.writerows(data)
 
 def train_multiclassifier(dataset_path, weights):
     CE_CRITERION = nn.CrossEntropyLoss(weight=weights)
@@ -44,10 +51,20 @@ def train_multiclassifier(dataset_path, weights):
     MC = MultiClassifier().to(device)
     Optimizer = torch.optim.Adam(MC.parameters(), lr=ADAM_ALPHA, betas=ADAM_BETA, weight_decay=REGULARIZATION)
     print('Training.')
+    for val_batch_i, val_batch_data in enumerate(val_loader):
+        val_imgs, val_labels, val_indices = val_batch_data
+        val_imgs = Variable(val_imgs.type(FloatTensor)).to(device)
+        val_labels = torch.stack(val_labels)
+        val_labels = torch.transpose(val_labels, 0, 1)
+        val_labels = Variable(val_labels).to(device)
+        break
+
+    training_loss_data_path = os.path.join(DATASET_RAW_PATH, dataset_path + ".csv") 
+    training_loss_data = []
     for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times
         for batch_index, batch_data in enumerate(train_loader):
             # get the inputs
-            imgs, labels = batch_data
+            imgs, labels, indices = batch_data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
             labels = torch.stack(labels)
             labels = torch.transpose(labels, 0, 1)
@@ -61,23 +78,20 @@ def train_multiclassifier(dataset_path, weights):
             loss = CE_CRITERION(outputs, torch.max(labels, 1)[1])
             loss.backward()
             Optimizer.step()
-
+            if (batch_index % 200) == 0:
+                val_outputs = MC(val_imgs)
+                val_loss = CE_CRITERION(val_outputs, torch.max(val_labels, 1)[1])
+                training_loss_data.append((loss.item(), val_loss.item()))
             # Print Loss
             if epoch_index % PRINT_INTERVAL == 0 and not batch_index:    # print every 2000 mini-batches
                 print('Epoch: %d \tTraining Loss: %.3f' % (epoch_index, loss))
-                for val_batch_i, val_batch_data in enumerate(val_loader):
-                    val_imgs, val_labels = val_batch_data
-                    val_imgs = Variable(val_imgs.type(FloatTensor)).to(device)
-                    val_labels = torch.stack(val_labels)
-                    val_labels = torch.transpose(val_labels, 0, 1)
-                    val_labels = Variable(val_labels).to(device)
-                    val_outputs = MC(val_imgs)
-                    val_loss = CE_CRITERION(val_outputs, torch.max(val_labels, 1)[1])
-                    print('Epoch: %d \tValidation Loss: %.3f' % (epoch_index, val_loss))
-                    break
+                val_outputs = MC(val_imgs)
+                val_loss = CE_CRITERION(val_outputs, torch.max(val_labels, 1)[1])
+                print('Epoch: %d \tValidation Loss: %.3f' % (epoch_index, val_loss))
+                #    break
     print('Finished Training. Testing on Validation Set.')
 
-
+    save_training_loss(training_loss_data_path, training_loss_data)
     #Validation Set
     #val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
     #val_data = MovieDataset(val_path)
@@ -85,9 +99,10 @@ def train_multiclassifier(dataset_path, weights):
 
     correct_predicted = 0
     total_predicted = 0
+    classes = ut.unpickle(CLASS_INDECES_RAW_PATH)
     with torch.no_grad():
         for data in val_loader:
-            imgs, labels = data
+            imgs, labels, indices = data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
             labels = torch.stack(labels)
             labels = torch.transpose(labels, 0, 1)
@@ -97,19 +112,22 @@ def train_multiclassifier(dataset_path, weights):
             _, predicted = torch.max(outputs.data, 1)
             #total_predicted += labels.size(0)
             #correct_predicted += (labels[predicted] == 1).sum().item()
+            print("MOVIE IDS")
+            print(indices)
             for batch_i in range (predicted.size(0)):
                 total_predicted += 1
                 correct_predicted += (labels[batch_i][predicted[batch_i]].item() == 1)
+                print("Movie Id: %s \tPrediction: %s \tGround Truth: %s" % (indices[batch_i], classes[predicted[batch_i]], classes[torch.argmax(labels[batch_i])]))
 
     print('Accuracy of the CNN on Validation Set: %d %%' % (
         100 * correct_predicted / total_predicted))
 
-    classes = ut.unpickle(CLASS_INDECES_RAW_PATH)
+    #classes = ut.unpickle(CLASS_INDECES_RAW_PATH)
     class_correct = list(0. for i in range(len(classes)))
     class_total = list(0. for i in range(len(classes)))
     with torch.no_grad():
         for data in val_loader:
-            imgs, labels = data
+            imgs, labels, indices = data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
             labels = torch.stack(labels)
             labels = torch.transpose(labels, 0, 1)
@@ -148,7 +166,7 @@ def train_multilabelclassifier(dataset_path):
     for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times
         for batch_index, batch_data in enumerate(train_loader):
             # get the inputs
-            imgs, labels = batch_data
+            imgs, labels, indices = batch_data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
             labels = torch.stack(labels)
             labels = torch.transpose(labels, 0, 1)
@@ -185,7 +203,7 @@ def train_multilabelclassifier(dataset_path):
     false_negatives = 0
     with torch.no_grad():
         for data in val_loader:
-            imgs, labels = data
+            imgs, labels, indices = data
             imgs = Variable(imgs.type(FloatTensor)).to(device)
             labels = torch.stack(labels)
             labels = torch.transpose(labels, 0, 1)
