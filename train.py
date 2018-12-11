@@ -159,10 +159,26 @@ def train_multilabelclassifier(dataset_path):
     train_data = MovieDataset(train_path)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
 
+
+    val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
+    val_data = MovieDataset(val_path)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
+    
     # Instantiate the models
     ML = MultiLabelClassifier().to(device)
     Optimizer = torch.optim.Adam(ML.parameters(), lr=ADAM_ALPHA, betas=ADAM_BETA)
     print('Training.')
+    for val_batch_i, val_batch_data in enumerate(val_loader):
+        val_imgs, val_labels, val_indices = val_batch_data
+        val_imgs = Variable(val_imgs.type(FloatTensor)).to(device)
+        val_labels = torch.stack(val_labels)
+        val_labels = torch.transpose(val_labels, 0, 1)
+        val_labels = Variable(val_labels.type(FloatTensor)).to(device)
+        break
+
+    training_loss_data_path = os.path.join(DATASET_RAW_PATH, dataset_path + ".csv")
+    training_loss_data = []
+
     for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times
         for batch_index, batch_data in enumerate(train_loader):
             # get the inputs
@@ -184,18 +200,25 @@ def train_multilabelclassifier(dataset_path):
             loss = BCE_CRITERION(outputs, labels) 
             loss.backward()
             Optimizer.step()
-
+            if (batch_index % 100) == 0:
+                val_outputs = ML(val_imgs)
+                val_loss = BCE_CRITERION(val_outputs, val_labels)
+                training_loss_data.append((loss.item(), val_loss.item()))
             # Print Loss
             if epoch_index % PRINT_INTERVAL == 0 and not batch_index:    # print every 2000 mini-batches
-                print('Epoch: %d \tLoss: %.3f' % (epoch_index, loss))
+                print('Epoch: %d \tTraining Loss: %.3f' % (epoch_index, loss))
+                val_outputs = ML(val_imgs)
+                val_loss = BCE_CRITERION(val_outputs, val_labels)
+                print('Epoch: %d \tValidation Loss: %.3f' % (epoch_index, val_loss))
 
     print('Finished Training. Testing on Validation Set.')
 
+    save_training_loss(training_loss_data_path, training_loss_data)
 
     #Validation Set
-    val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
-    val_data = MovieDataset(val_path)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
+    #val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
+    #val_data = MovieDataset(val_path)
+    #val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
 
     true_positives = 0
     true_negatives = 0
