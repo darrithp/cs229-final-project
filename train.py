@@ -171,16 +171,16 @@ def train_multilabelclassifier(dataset_path):
             labels = torch.stack(labels)
             labels = torch.transpose(labels, 0, 1)
             labels = Variable(labels.type(FloatTensor)).to(device)
-            print("labels")
-            print(labels)
+            #print("labels")
+            #print(labels)
             #labels = Variable(labels.to(device))
             # zero the parameter gradients
             Optimizer.zero_grad()
 
             # forward + backward + optimize
             outputs = ML(imgs)
-            print("outputs")
-            print(torch.sigmoid(outputs.data))
+            #print("outputs")
+            #print(torch.sigmoid(outputs.data))
             loss = BCE_CRITERION(outputs, labels) 
             loss.backward()
             Optimizer.step()
@@ -213,7 +213,7 @@ def train_multilabelclassifier(dataset_path):
             predicted = outputs
             true = torch.ones_like(predicted, device=device)
             false = torch.zeros_like(predicted, device=device)
-            print(predicted)
+            #print(predicted)
             predicted = torch.where(predicted >= 0.5, true, false)
             #total_predicted += labels.size(0)
             #correct_predicted += (labels[predicted] == 1).sum().item()
@@ -237,6 +237,10 @@ def train_multilabelclassifier(dataset_path):
         100 * true_positives / (true_positives+false_positives)))
     print('Recall: %d %%' % (
         100 * true_positives / (true_positives+false_negatives)))
+    print('Number of positive predictions: %d %%' % ( true_positives + false_positives))
+    print('Number of negative predictions: %d %%' % ( true_negatives + false_negatives))
+    print('True negatives: %d %%' % (true_negatives))
+    print('True positives: %d %%' % (true_positives))
 
 def get_class_weights():
     class_counts = ut.get_distribution()

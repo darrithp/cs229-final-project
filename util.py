@@ -18,7 +18,9 @@ def unpickle(filename):
 
 def repickle(obj, out_path):
     with open(out_path, 'wb') as f:
-        pickle.dump(obj, f, protocol=2)
+        p = pickle.Pickler(f, protocol=2)
+        p.fast = True
+        p.dump(obj)
 
 def create_dir(dir_path):
     try:

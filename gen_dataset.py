@@ -62,9 +62,10 @@ def gen_dataset(N, data_path, isMC = True):
     movie_ids = random.sample(full_ids, N)
 
     ids_l = len(movie_ids)
-    train_ids = shuffle(movie_ids[:int(ids_l*SPLIT[0])])
-    val_ids = shuffle(movie_ids[int(ids_l*SPLIT[0]):int(ids_l*(SPLIT[0]+SPLIT[1]))])
-    test_ids = shuffle(movie_ids[int(ids_l*(SPLIT[0]+SPLIT[1])):-1])
+    shuffle(movie_ids)
+    train_ids = movie_ids[:int(ids_l*SPLIT[0])]
+    val_ids = movie_ids[int(ids_l*SPLIT[0]):int(ids_l*(SPLIT[0]+SPLIT[1]))]
+    test_ids = movie_ids[int(ids_l*(SPLIT[0]+SPLIT[1])):-1]
 
     print("Generating Training Set...")
     generate_set(train_ids, movie_dict, data_path, "train", isMC)
