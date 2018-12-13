@@ -14,7 +14,7 @@ from model import MultiClassifier, MultiLabelClassifier
 
 #CE_CRITERION = nn.CrossEntropyLoss()
 #BCE_CRITERION = nn.BCEWithLogitsLoss()
-N_EPOCHS = 50
+N_EPOCHS = 25
 BATCH_SIZE = 25
 ADAM_ALPHA = 0.00005
 ADAM_BETA = (0.9, 0.999)
