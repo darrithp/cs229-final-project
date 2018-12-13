@@ -96,10 +96,11 @@ def train_multiclassifier(dataset_path, weights):
     #val_path = os.path.join(DATASET_RAW_PATH, dataset_path, VAL_DATA)
     #val_data = MovieDataset(val_path)
     #val_loader = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True)
-
+    lenient_predicted = 0
     correct_predicted = 0
     total_predicted = 0
     classes = ut.unpickle(CLASS_INDECES_RAW_PATH)
+    movie_dict = ut.unpickle("data/movies_multi_index.pkl")
     with torch.no_grad():
         for data in val_loader:
             imgs, labels, indices = data
@@ -117,10 +118,12 @@ def train_multiclassifier(dataset_path, weights):
             for batch_i in range (predicted.size(0)):
                 total_predicted += 1
                 correct_predicted += (labels[batch_i][predicted[batch_i]].item() == 1)
+                lenient_predicted += (predicted[batch_i].item() in movie_dict[indices[batch_i]])
                 print("Movie Id: %s \tPrediction: %s \tGround Truth: %s" % (indices[batch_i], classes[predicted[batch_i]], classes[torch.argmax(labels[batch_i])]))
 
-    print('Accuracy of the CNN on Validation Set: %d %%' % (
+    print('Accuracy of the Multi-Class Classifier on Validation Set: %d %%' % (
         100 * correct_predicted / total_predicted))
+    print('Lenient Accuracy of the Multi-Class Classifier on Validation Set %d %%' %(100 * lenient_predicted / total_predicted))
 
     #classes = ut.unpickle(CLASS_INDECES_RAW_PATH)
     class_correct = list(0. for i in range(len(classes)))
