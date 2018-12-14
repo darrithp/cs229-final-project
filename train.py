@@ -14,9 +14,9 @@ from model import MultiClassifier, MultiLabelClassifier
 
 #CE_CRITERION = nn.CrossEntropyLoss()
 #BCE_CRITERION = nn.BCEWithLogitsLoss()
-N_EPOCHS = 25
+N_EPOCHS = 100
 BATCH_SIZE = 25
-ADAM_ALPHA = 0.00005
+ADAM_ALPHA = 0.000000005
 ADAM_BETA = (0.9, 0.999)
 PRINT_INTERVAL = 5
 DATASET_RAW_PATH = os.path.join("data","temp")
@@ -59,7 +59,7 @@ def train_multiclassifier(dataset_path, weights):
         val_labels = Variable(val_labels).to(device)
         break
 
-    training_loss_data_path = os.path.join(DATASET_RAW_PATH, dataset_path + ".csv") 
+    training_loss_data_path = os.path.join(DATASET_RAW_PATH, "0_0000005" + dataset_path + ".csv") 
     training_loss_data = []
     for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times
         for batch_index, batch_data in enumerate(train_loader):
@@ -178,8 +178,8 @@ def train_multilabelclassifier(dataset_path):
         val_labels = torch.transpose(val_labels, 0, 1)
         val_labels = Variable(val_labels.type(FloatTensor)).to(device)
         break
-
-    training_loss_data_path = os.path.join(DATASET_RAW_PATH, dataset_path + ".csv")
+    alpha_string = str(ADAM_ALPHA)
+    training_loss_data_path = os.path.join(DATASET_RAW_PATH, alpha_string + dataset_path + ".csv")
     training_loss_data = []
 
     for epoch_index in range(N_EPOCHS):  # loop over the dataset multiple times

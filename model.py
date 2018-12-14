@@ -29,7 +29,7 @@ class MultiClassifier(nn.Module):
         conv_4 = F.elu(self.conv2d4(conv_3))
         conv_5 = F.elu(self.conv2d5(conv_4))
         drop_1 = self.drop1(conv_5)
-        conv_5_reshape = drop1.view(-1, 16384)
+        conv_5_reshape = drop_1.view(-1, 16384)
         linear_1 = self.linear3(conv_5_reshape)
         #linear_2 = F.elu(self.linear2(linear_1))
         #linear_3 = F.elu(self.linear3(linear_2))
